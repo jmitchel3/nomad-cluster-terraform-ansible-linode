@@ -33,3 +33,10 @@ variable "linode_instance_type" {
     description     = "Linode type to deploy"
     default         = "g6-standard-2"
 }
+
+variable "ansible_root_directory" {
+    type            = string
+    description     = "Ansible directory (relative to repo dir)"
+    default         = "config"
+
+}
