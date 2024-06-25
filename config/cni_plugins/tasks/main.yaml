@@ -1,0 +1,24 @@
+- name: Ensure the directory for CNI plugins exists
+  file:
+    path: /opt/cni/bin
+    state: directory
+    mode: '0755'
+
+- name: Download CNI plugins archive
+  get_url:
+    url: "https://github.com/containernetworking/plugins/releases/download/v{{ cni_plugins_version }}/cni-plugins-linux-amd64-v{{ cni_plugins_version }}.tgz"
+    dest: "/tmp/cni-plugins-{{ cni_plugins_version }}.tgz"
+    mode: '0644'
+
+- name: Extract CNI plugins
+  unarchive:
+    src: "/tmp/cni-plugins-{{ cni_plugins_version }}.tgz"
+    dest: "/opt/cni/bin"
+    remote_src: yes
+
+- name: Ensure CNI plugins are executable
+  file:
+    path: "/opt/cni/bin"
+    state: directory
+    mode: '0755'
+    recurse: yes

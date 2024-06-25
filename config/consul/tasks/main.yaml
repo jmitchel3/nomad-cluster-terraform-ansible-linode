@@ -1,0 +1,73 @@
+---
+- name: Update Apt cache
+  apt:
+    update_cache: yes
+  ignore_errors: true
+
+- name: Ensure Consul user exists
+  user:
+    name: "{{ consul_user }}"
+    shell: /sbin/nologin
+
+- name: Install unzip package
+  package:
+    name: unzip
+    state: present
+
+- name: Ensure necessary directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: '0755'
+  with_items:
+    - "{{ consul_config_dir }}"
+    - "{{ consul_data_dir }}"
+    - "{{ consul_log_dir }}"
+
+- name: Download Consul binary
+  get_url:
+    url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip"
+    dest: "/tmp/consul-{{ consul_version }}.zip"
+    mode: '0644'
+
+- name: Unzip Consul binary
+  unarchive:
+    src: "/tmp/consul-{{ consul_version }}.zip"
+    dest: "{{ consul_install_dir }}"
+    remote_src: yes
+
+- name: Ensure Consul binary is executable
+  file:
+    path: "{{ consul_install_dir }}/consul"
+    state: file
+    mode: '0755'
+
+- name: Create Consul configuration file
+  template:
+    src: consul.hcl.j2
+    dest: "{{ consul_config_dir }}/consul.hcl"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: '0644'
+  notify: Restart Consul
+
+- name: Fetch Configuration
+  fetch:
+    src: "{{ consul_config_dir }}/consul.hcl"
+    dest: "{{ playbook_dir }}/../samples/consul-{{ nomad_type }}.hcl"
+    flat: yes
+
+- name: Create Consul service file
+  template:
+    src: consul.service.j2
+    dest: /etc/systemd/system/consul.service
+    mode: '0644'
+  notify: Restart Consul
+
+- name: Enable and start Consul service
+  systemd:
+    name: consul
+    enabled: yes
+    state: started

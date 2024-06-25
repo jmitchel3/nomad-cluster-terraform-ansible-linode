@@ -1,0 +1,17 @@
+---
+- hosts: servers
+  become: yes
+  vars:
+    use_consul: true
+  roles:
+    - consul
+    - nomad
+- hosts: clients
+  become: yes
+  vars:
+    use_consul: true
+  roles:
+    - cni_plugins
+    - consul
+    - docker_install
+    - nomad

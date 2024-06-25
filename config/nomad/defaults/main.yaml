@@ -1,0 +1,6 @@
+---
+nomad_version: "1.8.1"
+nomad_install_dir: "/usr/local/bin"
+nomad_config_dir: "/etc/nomad.d"
+nomad_data_dir: "/opt/nomad"
+nomad_user: "nomad"

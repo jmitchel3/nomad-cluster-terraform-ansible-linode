@@ -1,0 +1,109 @@
+---
+- name: Update Apt cache
+  apt:
+    update_cache: yes
+  ignore_errors: true
+
+- name: Ensure Nomad user exists
+  user:
+    name: "{{ nomad_user }}"
+    shell: /sbin/nologin
+
+- name: Create Shared Directories
+  file:
+    dest: "{{ item }}"
+    state: directory
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_user }}"
+    mode: '0755'
+  with_items: 
+    - "/opt/nomad"
+    - "/mnt/shared"
+    
+- name: Check if Docker group exists
+  command: getent group docker
+  register: docker_group_exists
+  ignore_errors: true
+
+- name: Add Nomad user to Docker group
+  command: usermod -aG docker {{ nomad_user }}
+  when: docker_group_exists.rc == 0
+  ignore_errors: true
+
+- name: Restart Docker to apply group changes
+  service:
+    name: docker
+    state: restarted
+  when: docker_group_exists.rc == 0
+
+- name: Install unzip package
+  package:
+    name: unzip
+    state: present
+
+- name: Create directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_user }}"
+    mode: '0755'
+  with_items:
+    - "{{ nomad_config_dir }}"
+    - "{{ nomad_data_dir }}"
+
+- name: Download Nomad binary
+  get_url:
+    url: "https://releases.hashicorp.com/nomad/{{ nomad_version }}/nomad_{{ nomad_version }}_linux_amd64.zip"
+    dest: "/tmp/nomad-{{ nomad_version }}.zip"
+    mode: '0644'
+
+- name: Unzip Nomad binary
+  unarchive:
+    src: "/tmp/nomad-{{ nomad_version }}.zip"
+    dest: "{{ nomad_install_dir }}"
+    remote_src: yes
+
+- name: Ensure Nomad binary is executable
+  file:
+    path: "{{ nomad_install_dir }}/nomad"
+    state: file
+    mode: '0755'
+
+- name: Create Nomad configuration file
+  template:
+    src: nomad-config.hcl.j2
+    dest: "{{ nomad_config_dir }}/nomad.hcl"
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_user }}"
+    mode: '0644'
+  notify: Restart Nomad
+
+
+- name: Fetch Configuration
+  fetch:
+    src: "{{ nomad_config_dir }}/nomad.hcl"
+    dest: "{{ playbook_dir }}/../samples/nomad-{{ nomad_type }}.hcl"
+    flat: yes
+
+
+- name: Create sysctl configuration for bridge network
+  copy:
+    dest: /etc/sysctl.d/bridge.conf
+    content: |
+      net.bridge.bridge-nf-call-arptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+
+- name: Create Nomad service file
+  template:
+    src: nomad.service.j2
+    dest: /etc/systemd/system/nomad.service
+    mode: '0644'
+
+- name: Enable and start Nomad service
+  systemd:
+    name: nomad
+    enabled: yes
+    state: started
+  notify: Restart Nomad

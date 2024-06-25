@@ -1,0 +1,10 @@
+---
+# defaults file for consul
+consul_version: "1.19.0"
+consul_user: "consul"
+consul_group: "consul"
+consul_install_dir: "/usr/local/bin"
+consul_config_dir: "/etc/consul.d"
+consul_data_dir: "/opt/consul"
+consul_log_dir: "/var/log/consul"
+consul_bind_address: "{{ subnet_ip }}"

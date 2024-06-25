@@ -1,0 +1,24 @@
+[Unit]
+Description=Nomad
+Documentation=https://nomadproject.io/docs/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+{% if nomad_type == 'server' %}
+
+User={{ nomad_user }}
+Group={{ nomad_user }}
+{% else %}
+# https://developer.hashicorp.com/nomad/docs/operations/nomad-agent#permissions
+User=root
+Group=root
+{% endif %}
+ExecStart={{ nomad_install_dir }}/nomad agent -config={{ nomad_config_dir }}
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

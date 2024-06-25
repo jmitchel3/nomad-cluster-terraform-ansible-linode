@@ -1,0 +1,37 @@
+node_name = "{{ inventory_hostname }}"
+datacenter = "{{ linode_region }}"
+data_dir = "{{ consul_data_dir }}"
+log_file = "{{ consul_log_dir }}/consul.log"
+
+log_level = "INFO"
+
+{% if nomad_type == 'server' %}
+bootstrap_expect = 3
+server = true
+ui_config {
+    enabled = true
+}
+{% else %}
+server = false
+ui_config {
+    enabled = false
+}
+{% endif %}
+
+bind_addr="{{ consul_bind_address }}"
+advertise_addr="{{ consul_bind_address }}"
+client_addr = "0.0.0.0"
+
+retry_join = [
+{% for host in groups['consul_nodes'] %}
+"{{ hostvars[host]['subnet_ip'] }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+]
+
+ports {
+    grpc = 8502
+}
+
+connect {
+    enabled = true
+}

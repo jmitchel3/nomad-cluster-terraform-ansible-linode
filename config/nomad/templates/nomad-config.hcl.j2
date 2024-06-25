@@ -1,0 +1,86 @@
+name = "{{ inventory_hostname }}"
+data_dir = "{{ nomad_data_dir }}"
+region = "us"
+datacenter = "{{ linode_region }}"
+
+
+advertise {
+    http = "{{ subnet_ip }}"
+    rpc  = "{{ subnet_ip }}"
+    serf = "{{ subnet_ip }}"
+}
+
+bind_addr = "0.0.0.0"
+
+{% if nomad_type == 'server' %}
+server {
+    enabled = true
+    bootstrap_expect = 3
+    server_join {
+        retry_join = [
+            {% for host in groups['servers'] %}
+            "{{ hostvars[host]['subnet_ip'] }}:4648",
+            {% endfor %}
+        ]
+        retry_max      = 4
+        retry_interval = "15s"
+    }
+}
+
+client {
+    enabled = false
+}
+
+ui {
+    enabled = true
+}
+
+{% else %}
+
+server {
+    enabled = false
+}
+
+client {
+    enabled = true
+    host_volume "shared" {
+        path      = "/mnt/shared"
+        read_only = false
+    }
+    
+    servers = [
+        {% for host in groups['servers'] %}
+        "{{ hostvars[host]['subnet_ip'] }}:4647",
+        {% endfor %}
+    ]
+    options = {
+        "driver.raw_exec.enable" = "1"
+        "docker.privileged.enabled" = "true"
+    }
+    alloc_dir = "/opt/nomad/alloc"
+    state_dir = "/opt/nomad/client"
+
+    # Docker plugin configuration
+    meta {
+        "docker" = "true"
+    }
+}
+
+plugin "docker" {
+    config {
+        volumes {
+            enabled = true
+        }
+    }
+}
+
+{% endif %}
+
+
+{% if use_consul %}
+consul {
+    address = "127.0.0.1:8500"
+    client_auto_join = true
+    server_auto_join = true
+}
+{% endif %}

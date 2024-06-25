@@ -1,0 +1,37 @@
+- name: Grab Docker Install Script
+  get_url:
+    url: https://get.docker.com
+    dest: /tmp/get-docker.sh
+    mode: 0755
+
+- name: Verify Docker Command
+  shell: command -v docker >/dev/null 2>&1
+  ignore_errors: true
+  register: docker_cli_exists
+
+- debug: msg="{{ docker_cli_exists.rc }}"
+
+- name: exec docker script
+  shell: |
+    echo "Docker missing" &&
+    sh /tmp/get-docker.sh
+  when: docker_cli_exists.rc != 0
+
+- name: Create Docker group
+  group:
+    name: docker
+    state: present
+  when: docker_cli_exists.rc != 0
+
+- name: Add user to Docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+  when: docker_cli_exists.rc != 0
+
+- name: Restart Docker to apply group changes
+  service:
+    name: docker
+    state: restarted
+  when: docker_cli_exists.rc == 0
