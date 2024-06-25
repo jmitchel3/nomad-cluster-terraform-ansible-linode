@@ -1,4 +1,5 @@
 config/inventory.ini
+infra/.terraform.lock.hcl
 samples/
 # Local .terraform directories
 **/.terraform/*

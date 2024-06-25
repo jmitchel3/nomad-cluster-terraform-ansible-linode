@@ -10,3 +10,26 @@ variable "linode_region" {
     default         = "us-ord" # Chicago
 } 
 
+variable "server_count" {
+    type            = number
+    description     = "Number of Linode instances to create to run Nomad servers"
+    default         = 3
+}
+
+variable "client_count" {
+    type            = number
+    description     = "Number of Linode instances to create to run Nomad clients"
+    default         = 3
+}
+
+variable "linode_instance_image" {
+    type            = string
+    description     = "Linode Image to deploy"
+    default         = "linode/ubuntu22.04"
+}
+
+variable "linode_instance_type" {
+    type            = string
+    description     = "Linode type to deploy"
+    default         = "g6-standard-2"
+}
