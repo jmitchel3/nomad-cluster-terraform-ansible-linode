@@ -1,3 +1,3 @@
 locals {
-  repo_dir = "${dirname(abspath(path.module))}"
+    repo_dir = "${dirname(abspath(path.module))}"
 }

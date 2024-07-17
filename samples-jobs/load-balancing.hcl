@@ -1,22 +1,22 @@
-job "nginx" {
+job "load-balancing" {
     datacenters = ["*"]
 
-    group "nginx" {
+    group "servers" {
         count = 1
 
         restart {
-        attempts = 3
-        delay    = "30s"
+	        attempts = 3
+	        delay    = "30s"
         }
 
         network {
-        port "http" {
-            static = 8080
-        }
+	        port "http" {
+	            static = 8080
+	        }
         }
 
         service {
-            name = "nginx"
+            name = "load-balancing"
             port = "http"
         }
 
@@ -39,7 +39,7 @@ upstream backend {
     {{ range service "cfe-nginx" }}
     server {{ .Address }}:{{ .Port }};
     {{ end }}
-    {{ range service "demo-webapp" }}
+    {{ range service "iac-python" }}
     server {{ .Address }}:{{ .Port }};
     {{ else }}server 127.0.0.1:65535; # force a 502
     {{ end }}

@@ -21,7 +21,7 @@ ui_config {
 bind_addr="{{ consul_bind_address }}"
 advertise_addr="{{ consul_bind_address }}"
 client_addr = "0.0.0.0"
-
+ 
 retry_join = [
 {% for host in groups['consul_nodes'] %}
 "{{ hostvars[host]['subnet_ip'] }}"{% if not loop.last %},{% endif %}

@@ -11,7 +11,7 @@
 
 - name: Install unzip package
   package:
-    name: unzip
+    name: unzip 
     state: present
 
 - name: Ensure necessary directories exist

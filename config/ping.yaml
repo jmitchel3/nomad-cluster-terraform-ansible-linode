@@ -1,5 +1,13 @@
-- name: Ping Hosts
+- name: Ping Hosts and Do Basic Config
   hosts: all
   tasks:
     - name: Ping all hosts
       ping:
+    - name: Set env vars in bash profile
+      blockinfile:
+        path: /etc/profile.d/custom_env.sh
+        create: yes
+        block: |
+          export ANSIBLE_HOST="{{ ansible_ssh_host }}"
+          export INV_HOSTNAME="{{ inventory_hostname }}"
+          export REGION="{{ linode_region }}"
